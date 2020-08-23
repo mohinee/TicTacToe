@@ -29,7 +29,6 @@ Route::get('/user/{id}', 'User@get');
 
 Route::post('/game', 'Game@create')->middleware(AddUserToGame::class);
 Route::put('/game/start/{game_id}', 'Game@update')->middleware(AddUserToGame::class);
-Route::put('/game/end/{game_id}', 'Game@update')->middleware(EndGame::class);
 Route::put('/game/moves', 'GameHistory@create');
 Route::get('/game/{id}', 'Game@get');
 Route::get('/game/active/list', 'Game@getAllCreatedGames');

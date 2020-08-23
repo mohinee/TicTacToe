@@ -15,11 +15,11 @@ function Player(props) {
   return (
     <>
       <span>{props.player.name}</span>
-      {props.timerStatus && !isNaN(timeLeft) ? (
+      {/* {props.timerStatus && !isNaN(timeLeft) ? (
         <span>Time left: {timeLeft} sec</span>
       ) : (
         ""
-      )}
+      )} */}
     </>
   );
 }

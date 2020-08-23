@@ -1,5 +1,10 @@
 ### SERVER SETUP:
 
+if you do not have composer installed on your machine please install it using https://getcomposer.org/download/
+&&
+
+`mv composer.phar /usr/local/bin/composer`
+
 run setup.sh in your terminal
 
 Edit then the .env file to suit your needs (APP*\*, DB*\*, …).

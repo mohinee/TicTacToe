@@ -21,6 +21,8 @@ class FindWinner
         if ($winner != null) {
             if ($winner == $move->XO) {
                 $winner = $move->played_by;
+            } else if ($winner == "draw") {
+                $winner = 0;
             } else {
                 $winner = $request->player_two;
             }
@@ -46,6 +48,10 @@ class FindWinner
         }
         if ($grid[0][0] == $grid[1][1] && $grid[1][1] == $grid[2][2] && $grid[2][2] != null) {
             return $grid[0][0];
+        }
+        Log::info("all moves " . json_encode($allMoves) . " length: " . sizeof($allMoves));
+        if (sizeof($allMoves) === 9) {
+            return "draw";
         }
         return null;
     }

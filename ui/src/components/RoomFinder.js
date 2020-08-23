@@ -10,29 +10,12 @@ function RoomFinder() {
   let history = useHistory();
   const [roomId, setRoomId] = useState("");
   const [list, setList] = useState("");
-  useEffect(() => {
-    // switch (mode) {
-    //   case "Create":
-    //     console.log("new room created");
-    //     break;
-    //   case "Join":
-    //     console.log("joined and existing room");
-    //     break;
-    //   case "Find":
-    //     console.log("show all existing rooms");
-    //     break;
-    // }
-  }, [mode]);
 
   const handleClick = (e) => {
     setMode(e.target.name);
   };
 
-  const handleListSelect = (e) => {
-    setRoomId(e.target.key);
-  };
-  const getAllRooms = () => {
-    console.log("get list of all rooms");
+  useEffect(() => {
     fetch(Constants.GET_ACTIVE_ROOM_LIST, {
       method: `${Constants.GET}`,
     })
@@ -40,18 +23,27 @@ function RoomFinder() {
       .then((result) => {
         let list = result.data.map((room, i) => {
           return (
-            <button onClick={handleListSelect} key={room.game_id}>
-              Room {i}
+            <button
+              type="radio"
+              onClick={(e) => {
+                setRoomId(room.game_id);
+              }}
+              key={room.game_id}
+            >
+              Room {i + 1}
             </button>
           );
         });
-        console.log(list);
         setList(list);
       })
       .catch((e) => {
         console.log(e.message);
       });
-  };
+  }, []);
+
+  useEffect(() => {
+    joinRoomWithGameId();
+  }, [roomId]);
 
   const createRoom = () => {
     let player = localStorage.getItem("user");
@@ -69,7 +61,12 @@ function RoomFinder() {
     })
       .then((res) => res.json())
       .then((result) => {
-        history.push("/game/" + result.game_id);
+        console.log(result);
+        if (result.game_id != undefined) {
+          history.push("/game/" + result.game_id);
+        } else {
+          console.log(result);
+        }
       })
       .catch((e) => {
         console.log(e.message);
@@ -83,20 +80,22 @@ function RoomFinder() {
       player_two: player.user_id,
       first_move_by: player.user_id,
     };
-    fetch(Constants.JOIN_ROOM + roomId, {
-      method: `${Constants.UPDATE}`,
-      body: JSON.stringify(data),
-      headers: {
-        "Content-type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((result) => {
-        history.push("/game/" + roomId);
+    if (roomId !== "") {
+      fetch(Constants.JOIN_ROOM + roomId, {
+        method: `${Constants.UPDATE}`,
+        body: JSON.stringify(data),
+        headers: {
+          "Content-type": "application/json",
+        },
       })
-      .catch((e) => {
-        console.log(e.message);
-      });
+        .then((res) => res.json())
+        .then((result) => {
+          history.push("/game/" + roomId);
+        })
+        .catch((e) => {
+          console.log(e.message);
+        });
+    }
   };
   return (
     <>
@@ -138,7 +137,15 @@ function RoomFinder() {
       ) : (
         ""
       )}
-      {mode === "Find" ? { getAllRooms } : ""}
+      {mode === "Find" ? (
+        <div>
+          {list.length > 0
+            ? list
+            : "Sorry No rooms found! please create a new room"}
+        </div>
+      ) : (
+        ""
+      )}
     </>
   );
 }

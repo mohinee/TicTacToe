@@ -21,7 +21,7 @@ class EndGame
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next = null)
+    public function handle($request)
     {
         try {
             $id = json_decode(Game::where('game_id', $request->game_id)->first('id'), true);

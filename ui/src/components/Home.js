@@ -4,7 +4,7 @@ import "../App.css";
 import UserProfile from "../helpers/UserProfile";
 import * as Constants from "../Constants";
 import RoomFinder from "./RoomFinder";
-
+import Header from "./Header";
 function Home() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +27,6 @@ function Home() {
     })
       .then((res) => res.json())
       .then((result) => {
-        console.log(result);
         UserProfile.setSession(
           result.data.name,
           result.data.email,
@@ -78,7 +77,7 @@ function Home() {
   );
 
   return (
-    <>
+    <div className="home">
       <h2>Tic Tac Toe</h2>
       {!user ? (
         <>
@@ -101,9 +100,12 @@ function Home() {
           <div>{newUserFlag ? newUser : returningUser}</div>
         </>
       ) : (
-        <RoomFinder />
+        <>
+          <Header user={JSON.parse(UserProfile.getSession())} />
+          <RoomFinder />
+        </>
       )}
-    </>
+    </div>
   );
 }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NewMove;
 use App\Game as AppGame;
 use App\History;
 use App\Http\Resources\Game as ResourcesGame;
@@ -37,6 +38,9 @@ class Game extends Controller
             $game->next_move_by = $request->first_move_by;
             $game->status = 'ACTIVE';
             $game->save();
+            $res['game'] = new ResourcesGame($game);
+            $res['moves'] = [];
+            event(new NewMove($res, "game-" . $game->game_id));
             return (new ResourcesGame($game))->response()->setStatusCode(201);
         } catch (\Exception $error) {
             return response()->json($error->getMessage(), 400);
