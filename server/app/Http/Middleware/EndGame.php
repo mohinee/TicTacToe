@@ -6,6 +6,8 @@ use App\Game;
 use App\Http\Controllers\User as ControllersUser;
 use App\Http\Resources\Game as ResourcesGame;
 use App\Events\NewMove;
+use App\History;
+use App\Http\Resources\History as ResourcesHistory;
 use App\User;
 use Closure;
 use Illuminate\Support\Facades\Log;
@@ -40,7 +42,10 @@ class EndGame
             }
             $game->save();
         }
-        event(new NewMove("hello-world!!!", "game-" . $game->game_id));
+        $moves = History::where('game_id', $game->game_id)->get();
+        $res['game'] = new ResourcesGame($game);
+        $res['moves'] = new ResourcesHistory($moves);
+        event(new NewMove($res, "game-" . $game->game_id));
         return (new ResourcesGame($game))->response()->setStatusCode(201);
     }
 

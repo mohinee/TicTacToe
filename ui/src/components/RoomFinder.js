@@ -69,8 +69,7 @@ function RoomFinder() {
     })
       .then((res) => res.json())
       .then((result) => {
-        setRoomId(result.game_id);
-        joinRoomWithGameId();
+        history.push("/game/" + result.game_id);
       })
       .catch((e) => {
         console.log(e.message);
@@ -78,7 +77,26 @@ function RoomFinder() {
   };
 
   const joinRoomWithGameId = () => {
-    history.push("/game/" + roomId);
+    let player = localStorage.getItem("user");
+    player = JSON.parse(player);
+    let data = {
+      player_two: player.user_id,
+      first_move_by: player.user_id,
+    };
+    fetch(Constants.JOIN_ROOM + roomId, {
+      method: `${Constants.UPDATE}`,
+      body: JSON.stringify(data),
+      headers: {
+        "Content-type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        history.push("/game/" + roomId);
+      })
+      .catch((e) => {
+        console.log(e.message);
+      });
   };
   return (
     <>

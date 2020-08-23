@@ -4,16 +4,19 @@ import "./Game.css";
 import * as Constants from "../Constants";
 import Player from "./Player";
 import _ from "lodash";
-import Listener from "../helpers/Socket";
+//import Listener from "../helpers/Socket";
 import Pusher from "pusher-js";
-
+//import Pusher from "react-pusher";
 export default function Game(props) {
   const [history, setHistory] = useState([]);
   const [stepNumber, setStepNumber] = useState(0);
   const [isX, setIsX] = useState(false);
   const [gameStatus, setGameStatus] = useState(false);
-  const [game, setGame] = useState({});
+  const [game, setGame] = useState(null);
   const [playerTwo, setPlayerTwo] = useState({});
+  const [dataFetched, setIsFetched] = useState(false);
+  const [winner, setWinner] = useState(false);
+  const [status, setSatus] = useState(false);
 
   let ongoingGame = localStorage.getItem("game");
   if (ongoingGame === null) {
@@ -22,41 +25,46 @@ export default function Game(props) {
   let player = localStorage.getItem("user");
   player = JSON.parse(player);
 
-  // Listener.channel("game-" + props.match.params.gameId).listen(
-  //   "NewMove",
-  //   (e) => {
-  //     console.log("jhadakjshkjs");
-  //     console.log(e, "eeee");
-  //   }
-  // );
-
   var pusher = new Pusher("50e8ab547f3f550a7a74", {
     cluster: "ap2",
   });
   var channel = pusher.subscribe("game-" + props.match.params.gameId);
-  channel.bind(".new-move-made", function (data) {
-    console.log("blahhh");
-    console.log(data, "dddd");
+
+  channel.bind("new-move-made", function (data) {
+    let result = data.message;
+    let gameStatus =
+      result.game.status === "ACTIVE" &&
+      result.game.next_move_by === player.user_id;
+    if (result.game.first_move_by === player.user_id) {
+      setIsX(true);
+    }
+    setGameStatus(gameStatus);
+    setGame(result.data);
+    if (result.moves.length > 0) {
+      reconstructGameHistory(result.moves);
+    }
+    getWinner(result.game);
   });
 
-  const winner = _.isEmpty(game) ? "" : game.result;
-  let status;
-  if (winner) {
-    if (winner === player.user_id) {
-      status = "You win!";
+  const getWinner = (curGame) => {
+    setWinner(curGame.winner);
+    if (winner) {
+      if (winner === player.user_id) {
+        setSatus("You win!");
+      } else {
+        setSatus("You lose!");
+      }
     } else {
-      status = "You lose!";
+      setSatus("Next player: " + (isX ? "X" : "O"));
     }
-  } else {
-    status = "Next player: " + (isX ? "X" : "O");
-  }
-
+  };
   useEffect(() => {
     fetch(Constants.CREATE_ROOM + "/" + props.match.params.gameId, {
       method: Constants.GET,
     })
       .then((res) => res.json())
       .then((result) => {
+        console.log(result);
         let gameStatus =
           result.game.status === "ACTIVE" &&
           result.game.next_move_by === player.user_id;
@@ -69,12 +77,23 @@ export default function Game(props) {
           reconstructGameHistory(result.moves);
         }
         getPlayerTwo(result.game);
+        getWinner(result.game);
       });
-  }, [gameStatus]);
+    setIsFetched(true);
+    return function cleanup() {
+      channel.unbind();
+    };
+  }, []);
 
-  const getPlayerTwo = (game) => {
+  const refreshGame = (result) => {
+    console.log(result);
+  };
+
+  const getPlayerTwo = (curgame) => {
     let player_two =
-      game.player_one === player.user_id ? game.player_two : game.player_one;
+      curgame.player_one === player.user_id
+        ? curgame.player_two
+        : curgame.player_one;
     fetch(Constants.CREATE_USER_URL + "/" + player_two)
       .then((res) => res.json())
       .then((result) => {
@@ -95,6 +114,7 @@ export default function Game(props) {
   };
 
   const handleClick = (i) => {
+    console.log(gameStatus, "gamestatus");
     if (gameStatus) {
       if (history[i]) {
         return;
@@ -114,7 +134,7 @@ export default function Game(props) {
         player_two: playerTwo.id,
         game_id: props.match.params.gameId,
       };
-      fetch(Constants.CREATE_MOVE + "/" + props.match.params.gameId, {
+      fetch(Constants.CREATE_MOVE, {
         method: Constants.UPDATE,
         body: JSON.stringify(movedata),
         headers: {
@@ -135,33 +155,36 @@ export default function Game(props) {
   };
 
   return (
-    <div className="game">
-      {_.isEmpty(game) || game.status !== "ACTIVE" ? (
-        ""
-      ) : (
-        <ol>
-          <li>
-            <Player
-              player={player}
-              timer={game.timer}
-              timerStatus={gameStatus}
-            />
-          </li>
-          <li>
-            <Player
-              player={playerTwo}
-              timer={game.timer}
-              timerStatus={!gameStatus}
-            />
-          </li>
-        </ol>
-      )}
-      <div className="game-board">
-        <Board squares={history} onClick={(i) => handleClick(i)} />
+    <>
+      <div className="game">
+        {game !== null ? (
+          <ol>
+            {/* <li>
+              <Player
+                player={player}
+                timer={game.timer}
+                timerStatus={gameStatus}
+              />
+            </li>
+            <li>
+              <Player
+                player={playerTwo}
+                timer={game.timer}
+                timerStatus={!gameStatus}
+              />
+            </li> */}
+          </ol>
+        ) : (
+          ""
+        )}
+
+        <div className="game-board">
+          <Board squares={history} onClick={(i) => handleClick(i)} />
+        </div>
+        <div className="game-info">
+          <div>{status}</div>
+        </div>
       </div>
-      <div className="game-info">
-        <div>{status}</div>
-      </div>
-    </div>
+    </>
   );
 }
