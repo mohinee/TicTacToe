@@ -4,9 +4,8 @@ import "./Game.css";
 import * as Constants from "../Constants";
 import Player from "./Player";
 import _ from "lodash";
-//import Listener from "../helpers/Socket";
 import Pusher from "pusher-js";
-//import Pusher from "react-pusher";
+
 export default function Game(props) {
   const [history, setHistory] = useState([]);
   const [stepNumber, setStepNumber] = useState(0);
@@ -30,26 +29,11 @@ export default function Game(props) {
   });
   var channel = pusher.subscribe("game-" + props.match.params.gameId);
 
-  channel.bind("new-move-made", function (data) {
-    let result = data.message;
-    let gameStatus =
-      result.game.status === "ACTIVE" &&
-      result.game.next_move_by === player.user_id;
-    if (result.game.first_move_by === player.user_id) {
-      setIsX(true);
-    }
-    setGameStatus(gameStatus);
-    setGame(result.data);
-    if (result.moves.length > 0) {
-      reconstructGameHistory(result.moves);
-    }
-    getWinner(result.game);
-  });
-
   const getWinner = (curGame) => {
-    setWinner(curGame.winner);
-    if (winner) {
-      if (winner === player.user_id) {
+    setWinner(curGame.result);
+    console.log(curGame);
+    if (curGame.result) {
+      if (curGame.result === player.user_id) {
         setSatus("You win!");
       } else {
         setSatus("You lose!");
@@ -79,6 +63,21 @@ export default function Game(props) {
         getPlayerTwo(result.game);
         getWinner(result.game);
       });
+    channel.bind("new-move-made", function (data) {
+      let result = data.message;
+      let gameStatus =
+        result.game.status === "ACTIVE" &&
+        result.game.next_move_by === player.user_id;
+      if (result.game.first_move_by === player.user_id) {
+        setIsX(true);
+      }
+      setGameStatus(gameStatus);
+      setGame(result.data);
+      if (result.moves.length > 0) {
+        reconstructGameHistory(result.moves);
+      }
+      getWinner(result.game);
+    });
     setIsFetched(true);
     return function cleanup() {
       channel.unbind();
