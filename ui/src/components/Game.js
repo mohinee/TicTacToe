@@ -81,6 +81,7 @@ export default function Game(props) {
     setIsFetched(true);
     return function cleanup() {
       channel.unbind();
+      localStorage.removeItem("game");
     };
   }, []);
 

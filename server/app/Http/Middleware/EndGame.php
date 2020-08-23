@@ -23,30 +23,34 @@ class EndGame
      */
     public function handle($request, Closure $next = null)
     {
-        $id = json_decode(Game::where('game_id', $request->game_id)->first('id'), true);
-        $game = Game::findorFail($id['id']);
-        if (!is_null($request->winner)) {
-            $game->status = 'EXPIRED';
-            $game->result = $request->winner;
-            $player_one = $game->player_one;
-            $player_two = $game->player_two;
-            $game->next_move_by = null;
-            $game->save();
-            $this->updateUsers($player_one, $player_one == $request->winner ? 1 : 0);
-            $this->updateUsers($player_two, $player_two == $request->winner ? 1 : 0);
-        } else {
-            if ($request->played_by == $game->player_one) {
-                $game->next_move_by = $game->player_two;
+        try {
+            $id = json_decode(Game::where('game_id', $request->game_id)->first('id'), true);
+            $game = Game::findorFail($id['id']);
+            if (!is_null($request->winner)) {
+                $game->status = 'EXPIRED';
+                $game->result = $request->winner;
+                $player_one = $game->player_one;
+                $player_two = $game->player_two;
+                $game->next_move_by = null;
+                $game->save();
+                $this->updateUsers($player_one, $player_one == $request->winner ? 1 : 0);
+                $this->updateUsers($player_two, $player_two == $request->winner ? 1 : 0);
             } else {
-                $game->next_move_by = $game->player_one;
+                if ($request->played_by == $game->player_one) {
+                    $game->next_move_by = $game->player_two;
+                } else {
+                    $game->next_move_by = $game->player_one;
+                }
+                $game->save();
             }
-            $game->save();
+            $moves = History::where('game_id', $game->game_id)->get();
+            $res['game'] = new ResourcesGame($game);
+            $res['moves'] = new ResourcesHistory($moves);
+            event(new NewMove($res, "game-" . $game->game_id));
+            return (new ResourcesGame($game))->response()->setStatusCode(201);
+        } catch (\Exception $error) {
+            return response()->json($error->getMessage(), 400);
         }
-        $moves = History::where('game_id', $game->game_id)->get();
-        $res['game'] = new ResourcesGame($game);
-        $res['moves'] = new ResourcesHistory($moves);
-        event(new NewMove($res, "game-" . $game->game_id));
-        return (new ResourcesGame($game))->response()->setStatusCode(201);
     }
 
 
