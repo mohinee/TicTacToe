@@ -121,6 +121,7 @@ function RoomFinder() {
       </div>
       {mode === "Create" ? (
         <div>
+          Timer :
           <input
             placeholder="enter max time for a move"
             value={timer}
