@@ -27,6 +27,7 @@ function RoomFinder() {
               type="radio"
               onClick={(e) => {
                 setRoomId(room.game_id);
+                joinRoomWithGameId(room.game_id);
               }}
               key={room.game_id}
             >
@@ -40,10 +41,6 @@ function RoomFinder() {
         console.log(e.message);
       });
   }, []);
-
-  useEffect(() => {
-    joinRoomWithGameId();
-  }, [roomId]);
 
   const createRoom = () => {
     let player = localStorage.getItem("user");
@@ -59,10 +56,15 @@ function RoomFinder() {
         "Content-type": "application/json",
       },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status < 400) {
+          return res.json();
+        } else {
+          throw new Error("Oops! The user may have an active session.");
+        }
+      })
       .then((result) => {
-        console.log(result);
-        if (result.game_id != undefined) {
+        if (result.game_id !== undefined) {
           history.push("/game/" + result.game_id);
         } else {
           console.log(result);
@@ -73,22 +75,29 @@ function RoomFinder() {
       });
   };
 
-  const joinRoomWithGameId = () => {
+  const joinRoomWithGameId = (newRoomId) => {
     let player = localStorage.getItem("user");
     player = JSON.parse(player);
     let data = {
       player_two: player.user_id,
       first_move_by: player.user_id,
     };
-    if (roomId !== "") {
-      fetch(Constants.JOIN_ROOM + roomId, {
+    if (roomId !== "" || newRoomId !== "") {
+      fetch(Constants.JOIN_ROOM + (roomId ? roomId : newRoomId), {
         method: `${Constants.UPDATE}`,
         body: JSON.stringify(data),
         headers: {
           "Content-type": "application/json",
         },
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (res.status < 400) {
+            res.json();
+          } else {
+            setRoomId("");
+            throw new Error("Oops! No such room found!!!");
+          }
+        })
         .then((result) => {
           history.push("/game/" + roomId);
         })
@@ -131,8 +140,9 @@ function RoomFinder() {
             onChange={(e) => {
               setRoomId(e.target.value);
             }}
+            value={roomId}
           />
-          <button onClick={joinRoomWithGameId}>Join Room</button>
+          <button onClick={(e) => joinRoomWithGameId("", e)}>Join Room</button>
         </div>
       ) : (
         ""

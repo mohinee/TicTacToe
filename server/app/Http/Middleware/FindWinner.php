@@ -48,6 +48,8 @@ class FindWinner
         }
         if ($grid[0][0] == $grid[1][1] && $grid[1][1] == $grid[2][2] && $grid[2][2] != null) {
             return $grid[0][0];
+        } else if ($grid[0][2] == $grid[1][1] && $grid[1][1] == $grid[2][0] && $grid[2][0] != null) {
+            return $grid[0][2];
         }
         Log::info("all moves " . json_encode($allMoves) . " length: " . sizeof($allMoves));
         if (sizeof($allMoves) === 9) {

@@ -20,20 +20,13 @@ export default function Game(props) {
   var pusher = new Pusher("50e8ab547f3f550a7a74", {
     cluster: "ap2",
   });
-  var ongoingGame = localStorage.getItem("game");
-  if (ongoingGame === null) {
-    localStorage.setItem("game", props.match.params.gameId);
-  }
+
   var player = localStorage.getItem("user");
   player = JSON.parse(player);
 
   const getWinner = (curGame) => {
     let winner = curGame.result;
-    console.log(curGame);
-    console.log(playerTwo);
-    console.log(stepNumber);
-    console.log(isX, "is x");
-    console.log(winner);
+
     if (winner !== null) {
       if (winner === player.user_id) {
         setSatus("You win!");
@@ -47,12 +40,15 @@ export default function Game(props) {
     }
   };
   useEffect(() => {
+    var ongoingGame = localStorage.getItem("game");
+    if (ongoingGame === null) {
+      localStorage.setItem("game", props.match.params.gameId);
+    }
     fetch(Constants.CREATE_ROOM + "/" + props.match.params.gameId, {
       method: Constants.GET,
     })
       .then((res) => res.json())
       .then((result) => {
-        console.log(result);
         let gameStatus =
           result.game.status === "ACTIVE" &&
           result.game.next_move_by === player.user_id;
@@ -93,9 +89,9 @@ export default function Game(props) {
       getWinner(result.game);
       getPlayerTwo(result.game);
     });
-
-    return function cleanup() {
+    return () => {
       channel.unbind();
+      pusher.unsubscribe("game-" + props.match.params.gameId);
       localStorage.removeItem("game");
     };
   }, []);
@@ -133,7 +129,6 @@ export default function Game(props) {
   };
 
   const handleClick = (i) => {
-    console.log(gameStatus, "hfjkhksdjhskd");
     if (gameStatus) {
       if (history[i]) {
         return;
@@ -163,7 +158,6 @@ export default function Game(props) {
       })
         .then((res) => res.json())
         .then((result) => {
-          console.log(result, "update the move");
           let gameStatus =
             result.data.status === "ACTIVE" &&
             result.data.next_move_by === player.user_id;
